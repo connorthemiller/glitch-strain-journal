@@ -1,0 +1,165 @@
+<!-- This is a static file -->
+<!-- served from your routes in server.js -->
+
+<!-- You might want to try something fancier: -->
+<!-- html/nunjucks docs: https://mozilla.github.io/nunjucks/ -->
+<!-- pug: https://pugjs.org/ -->
+<!-- haml: http://haml.info/ -->
+<!-- hbs(handlebars): http://handlebarsjs.com/ -->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Strain Journal</title>
+    <meta name="description" content="A cool thing made with Glitch" />
+    <link
+      id="favicon"
+      rel="icon"
+      href="https://cdn.glitch.com/74282f5c-390d-4f52-99a5-5d282bc43f56%2Fcannabis.png?v=1584396737156"
+      type="image/x-icon"
+    />
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- import the webpage's stylesheet -->
+    <link rel="stylesheet" href="/style.css" />
+
+    <!-- import the webpage's client-side javascript file -->
+    <script src="https://www.gstatic.com/firebasejs/7.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.10.0/firebase-firestore.js"></script>
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/@mdi/font@4.x/css/materialdesignicons.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css"
+      rel="stylesheet"
+    />
+
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
+    <script type="module" src="/client.js" defer></script>
+  </head>
+  <body>
+    <div id="app">
+      <v-app>
+        <v-app-bar color="green" dark app>
+          <v-icon @click="route('/home')" large>mdi-cannabis</v-icon>
+          <v-toolbar-title>Strain Journal</v-toolbar-title>
+          <v-spacer></v-spacer>
+          <v-btn
+            v-show="user"
+            depressed
+            color="green lighten-1"
+            class="mr-2"
+            @click="logout"
+            >Log Out</v-btn
+          >
+        </v-app-bar>
+        <v-content>
+          <v-container fluid id="authenticate" v-show="!user" class="pt-2 ">
+            <v-row align="center" justify="center">
+              <v-col cols="12" sm="8" md="4">
+                <v-alert v-show="authError" type="error" dense outlined>
+                  {{ authError }}</v-alert
+                >
+                <v-card>
+                  <v-toolbar color="green" dark>
+                    <v-toolbar-title>Welcome</v-toolbar-title>
+                  </v-toolbar>
+                  <v-card-text>
+                    <v-text-field
+                      v-model="email"
+                      placeholder="email"
+                      type="email"
+                    ></v-text-field>
+                    <v-text-field
+                      v-model="password"
+                      placeholder="password"
+                      type="password"
+                    ></v-text-field>
+                    <v-btn @click="login">Log In</v-btn>
+                    <v-btn @click="signup">Sign Up</v-btn>
+                  </v-card-text>
+                </v-card>
+              </v-col>
+            </v-row>
+          </v-container>
+          <v-container id="home" v-show="user">
+            <v-alert v-show="!emailVerified" prominent type="info">
+              <v-row align="center">
+                <v-col align="start" class="grow"
+                  >Please verify your email address.</v-col
+                >
+                <v-col class="shrink">
+                  <v-btn color="blue lighten-1" @click="verifyEmail"
+                    >Send Email</v-btn
+                  >
+                </v-col>
+              </v-row>
+            </v-alert>
+            <v-data-iterator :items="strains">
+              <template v-slot:header>
+                <v-toolbar color="green" dark>
+                  <v-toolbar-title>Strains</v-toolbar-title>
+                  <v-spacer></v-spacer>
+                  <new-entry
+                    :isverified="emailVerified"
+                    :strains="strainnames"
+                    v-on:save-session="submit"
+                  ></new-entry>
+                </v-toolbar>
+              </template>
+              <template v-slot:default="props">
+                <v-row>
+                  <v-col
+                    v-for="(item, i) in props.items"
+                    :key="item.name"
+                    cols="12"
+                    sm="6"
+                    md="4"
+                    lg="3"
+                  >
+                    <v-card>
+                      <v-card-title class="subheading font-weight-bold">
+                        {{ item.data.name }}
+                        <v-spacer></v-spacer>
+                        <v-icon flat @click="deleteIt(item, i)"
+                          >mdi-delete-outline</v-icon
+                        >
+                      </v-card-title>
+                      <v-list>
+                        <v-list-item>
+                          <v-list-item-content>Type:</v-list-item-content>
+                          <v-list-item-content class="align-end"
+                            >{{ item.data.type }}</v-list-item-content
+                          >
+                        </v-list-item>
+                        <v-list-item>
+                          <v-list-item-content>Date:</v-list-item-content>
+                          <v-list-item-content class="align-end"
+                            >{{ item.data.date }}</v-list-item-content
+                          >
+                        </v-list-item>
+                        <v-list-item>
+                          <v-list-item-content>Rating:</v-list-item-content>
+                          <v-list-item-content class="align-end"
+                            >{{ item.data.rating }}/5</v-list-item-content
+                          >
+                        </v-list-item>
+                      </v-list>
+                      <v-divider></v-divider>
+                    </v-card>
+                  </v-col>
+                </v-row>
+              </template>
+            </v-data-iterator>
+          </v-container>
+        </v-content>
+      </v-app>
+    </div>
+  </body>
+</html>
